@@ -29,7 +29,8 @@ namespace TrainFinderBot.Dialogs
             // 変数定義
             bool train = false;  // "train" タグの有無
             string tag = "";     // カテゴリータグ
-            string line = "";   // 路線名 (駅すぱあと平均路線名)
+            string lineName = "";   // 路線名 (駅すぱあと運航路線名)
+            string lineCode = "";   // 路線名 (駅すぱあと運航路線コード)
             string list = "";   // 路線停車駅名リスト
             string msg = "";    // 返答メッセージ
 
@@ -37,6 +38,7 @@ namespace TrainFinderBot.Dialogs
             var cvGuid = new Guid("d25f704c-4a54-4578-ac29-6b30ddcfa439");
             var cvCred = new PredictionEndpointCredentials("9c631fd082474bffba4b981ff91ab7c0");
             var cvEp = new PredictionEndpoint(cvCred);
+
 
             // 画像が送られてきたら Custom Vision を呼び出してタグを取得
             if (activity.Attachments?.Count != 0)
@@ -81,28 +83,34 @@ namespace TrainFinderBot.Dialogs
                 switch (tag)
                 {
                     case "Chuo_Sobu":
-                        line = "ＪＲ総武線";
+                        lineName = "ＪＲ中央・総武線各駅停車";
+                        lineCode = "110";
                         break;
                     case "Chuo_Ex":
-                        line = "ＪＲ中央線快速";
+                        lineName = "ＪＲ中央線快速";
+                        lineCode = "109";
                         break;
                     case "Keihin-Tohoku":
-                        line = "ＪＲ京浜東北・根岸線快速";
+                        lineName = "ＪＲ京浜東北線";
+                        lineCode = "115";
                         break;
                     case "Tokaido":
-                        line = "ＪＲ東海道本線(東京－熱海)";
+                        lineName = "ＪＲ東海道本線";
+                        lineCode = "117";
                         break;
                     case "Yamanote":
-                        line = "ＪＲ山手線内回り";
+                        lineName = "ＪＲ山手線";
+                        lineCode = "113";
                         break;
                     case "Yokosuka_SobuEx":
-                        line = "ＪＲ横須賀線";
+                        lineName = "ＪＲ横須賀線";
+                        lineCode = "116";
                         break;
                 }
 
                 // 路線情報を取得してセット
-                list = await GetStationList(line);
-                msg = line + "のようですね。\n\n 停車駅は \n\n---- - \n\n" + list + " \n\n---- - \n\n です。";
+                list = await GetStationList(lineCode);
+                msg = lineName + "のようですね。\n\n 停車駅は \n\n---- - \n\n" + list + " \n\n---- - \n\n です。";
 
             }
             else if (train == true)
@@ -120,17 +128,15 @@ namespace TrainFinderBot.Dialogs
             context.Wait(MessageReceivedAsync);
         }
 
-        private async Task<string> GetStationList(string line)
+        private async Task<string> GetStationList(string lineCode)
         {
             var client = new HttpClient();
 
             // 路線名、アクセスキーをセット
-            var ekiRequest = Uri.EscapeUriString(
-                "http://api.ekispert.jp/v1/json/station?railName="
-                 + line
-                 + "&offset=1&limit=100&direction=down&gcs=tokyo&key="
-                 + "LE_zT88aARGDzx6n" //アクセスキー
-                );
+            var ekiRequest = "http://api.ekispert.jp/v1/json/station?&operationLineCode="
+                     + lineCode
+                     + "&direction=down&key="
+                     + "LE_zT88aARGDzx6n"; //アクセスキー
 
             // 路線情報の取得
             var ekiResult = await client.GetStringAsync(ekiRequest);
