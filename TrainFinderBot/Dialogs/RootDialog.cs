@@ -15,10 +15,8 @@ namespace TrainFinderBot.Dialogs
         public Task StartAsync(IDialogContext context)
         {
             // デフォルトのメッセージをセット
-            context.PostAsync($"こんにちは！Train Finder Bot です。");
-
+            context.PostAsync($"こんにちは！画像DE路線当てBot です。");
             context.Wait(MessageReceivedAsync);
-
             return Task.CompletedTask;
         }
 
@@ -27,18 +25,15 @@ namespace TrainFinderBot.Dialogs
             var activity = await result as Activity;
 
             // 変数定義
-            bool train = false;  // "train" タグの有無
-            string tag = "";     // カテゴリータグ
-            string lineName = "";   // 路線名 (駅すぱあと運航路線名)
-            string lineCode = "";   // 路線名 (駅すぱあと運航路線コード)
-            string list = "";   // 路線停車駅名リスト
-            string msg = "";    // 返答メッセージ
+            string tag = "";     // 電車カテゴリータグ
+            string msg = "";     // 返答メッセージ
+            string lineName = "";   // [追加] 路線名 (駅すぱあと運航路線名)
+            string lineCode = "";   // [追加] 路線コード (駅すぱあと運航路線コード)
 
             // Custom Vision API を使う準備
-            var cvGuid = new Guid("d25f704c-4a54-4578-ac29-6b30ddcfa439");
-            var cvCred = new PredictionEndpointCredentials("9c631fd082474bffba4b981ff91ab7c0");
+            var cvCred = new PredictionEndpointCredentials("YOUR_PREDICTION_KEY");
             var cvEp = new PredictionEndpoint(cvCred);
-
+            var cvGuid = new Guid("YOUR_PROJECT_ID");
 
             // 画像が送られてきたら Custom Vision を呼び出してタグを取得
             if (activity.Attachments?.Count != 0)
@@ -53,22 +48,8 @@ namespace TrainFinderBot.Dialogs
                     // 画像を判定
                     var cvResult = await cvEp.PredictImageAsync(cvGuid, photoStream);
 
-                    // train タグ および カテゴリーを取得
-                    foreach (var item in cvResult.Predictions)
-                    {
-                        if (item.Probability > 0.5)
-                        {
-                            if (item.Tag == "Train")
-                            {
-                                train = true;
-                            }
-                            else
-                            {
-                                tag = item.Tag;
-                                break;
-                            }
-                        }
-                    }
+                    // タグを取得
+                    tag = cvResult.Predictions[0].Tag;
                 }
                 catch
                 {
@@ -79,7 +60,8 @@ namespace TrainFinderBot.Dialogs
             // メッセージをセット
             if (tag != "")
             {
-                // タグに応じて路線名をセット
+                //msg = tag + "、に いちばんにてるね！";
+                // タグに応じてメッセージをセット
                 switch (tag)
                 {
                     case "Chuo_Sobu":
@@ -109,22 +91,19 @@ namespace TrainFinderBot.Dialogs
                 }
 
                 // 路線情報を取得してセット
-                list = await GetStationList(lineCode);
-                msg = lineName + "のようですね。\n\n 停車駅は \n\n---- - \n\n" + list + " \n\n---- - \n\n です。";
+                var list = await GetStationList(lineCode); // ※GetStationList は次以降の項目で作成
+                msg = lineName + "、に いちばんにてるね！\n\n"
+                    + lineName + "は、以下のえきをはしるよ。\n\n---- - \n\n"
+                    + list;
+            }
 
-            }
-            else if (train == true)
-            {
-                //msg = "I'm not sure what it is ...";
-                msg = "この電車は分からないです．．．";
-            }
             else
             {
-                //msg = "Send me train photo!";
-                msg = "電車の写真を送ってね♪";
+                // 判定できなかった場合
+                msg = "電車の写真を送ってね";
             }
-            await context.PostAsync(msg);
 
+            await context.PostAsync(msg);
             context.Wait(MessageReceivedAsync);
         }
 
@@ -134,9 +113,9 @@ namespace TrainFinderBot.Dialogs
 
             // 路線名、アクセスキーをセット
             var ekiRequest = "http://api.ekispert.jp/v1/json/station?&operationLineCode="
-                     + lineCode
-                     + "&direction=down&key="
-                     + "LE_zT88aARGDzx6n"; //アクセスキー
+                        + lineCode
+                        + "&direction=down&key="
+                        + "YOUR_ACCESSKEY"; //アクセスキー
 
             // 路線情報の取得
             var ekiResult = await client.GetStringAsync(ekiRequest);

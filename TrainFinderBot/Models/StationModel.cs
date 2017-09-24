@@ -5,6 +5,26 @@ using System.Web;
 
 namespace TrainFinderBot.Models
 {
+
+    public class StationModel
+    {
+        public Resultset ResultSet { get; set; }
+    }
+
+    public class Resultset
+    {
+        public string apiVersion { get; set; }
+        public string engineVersion { get; set; }
+        public Point[] Point { get; set; }
+    }
+
+    public class Point
+    {
+        public Station Station { get; set; }
+        public Prefecture Prefecture { get; set; }
+        public Geopoint GeoPoint { get; set; }
+    }
+
     public class Station
     {
         public string code { get; set; }
@@ -19,7 +39,7 @@ namespace TrainFinderBot.Models
         public string Name { get; set; }
     }
 
-    public class GeoPoint
+    public class Geopoint
     {
         public string longi { get; set; }
         public string lati { get; set; }
@@ -27,25 +47,5 @@ namespace TrainFinderBot.Models
         public string lati_d { get; set; }
         public string gcs { get; set; }
     }
-
-    public class Point
-    {
-        public Station Station { get; set; }
-        public Prefecture Prefecture { get; set; }
-        public GeoPoint GeoPoint { get; set; }
-    }
-
-    public class ResultSet
-    {
-        public string apiVersion { get; set; }
-        public string engineVersion { get; set; }
-        public List<Point> Point { get; set; }
-    }
-
-    public class StationModel
-    {
-        public ResultSet ResultSet { get; set; }
-    }
-
 
 }
